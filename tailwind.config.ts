@@ -61,7 +61,25 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+        // Skillink custom colors
+        skillink: {
+          blue: {
+            DEFAULT: '#1A365D',
+            light: '#2A4A7F',
+            dark: '#102A4C'
+          },
+          teal: {
+            DEFAULT: '#38B2AC',
+            light: '#4FD1CB',
+            dark: '#2C8A85'
+          },
+          gray: {
+            DEFAULT: '#718096',
+            light: '#A0AEC0',
+            dark: '#4A5568'
+          }
+        }
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
