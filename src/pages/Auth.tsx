@@ -26,6 +26,7 @@ const Auth: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [phoneError, setPhoneError] = useState<string>('');
   const [emailError, setEmailError] = useState<string>('');
+  const [processingLogin, setProcessingLogin] = useState<boolean>(false);
   
   useEffect(() => {
     // If already logged in, navigate to dashboard
@@ -64,17 +65,26 @@ const Auth: React.FC = () => {
     if (!validatePhoneNumber(phoneNumber)) return;
     
     try {
+      setProcessingLogin(true);
+      
       if (activeTab === 'login') {
+        // Try to login the user
         const response = await login(phoneNumber);
-        if (response) {
-          setActiveTab('otp');
-        } else {
+        
+        // If login fails (no user found), show a more friendly message
+        if (!response) {
           toast({
-            title: "User not found",
-            description: "Please register first",
+            title: "Account not found",
+            description: "This number doesn't have an account. Please register first.",
             variant: "destructive"
           });
+          // Optional: Automatically switch to register tab
+          setActiveTab('register');
+          return;
         }
+        
+        // Login success, move to OTP verification
+        setActiveTab('otp');
       } else {
         // For registration
         if (!name.trim()) {
@@ -88,6 +98,7 @@ const Auth: React.FC = () => {
         
         if (email && !validateEmail(email)) return;
         
+        // Move to OTP verification for registration flow
         setActiveTab('otp');
       }
     } catch (error) {
@@ -96,6 +107,8 @@ const Auth: React.FC = () => {
         description: "Something went wrong. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setProcessingLogin(false);
     }
   };
   
@@ -105,17 +118,22 @@ const Auth: React.FC = () => {
       
       if (isValid) {
         if (activeTab === 'register') {
-          // For registration flow
+          // For registration flow, create a new user
           await register(name, phoneNumber, email || undefined);
+          
+          toast({
+            title: "Success!",
+            description: "Account created successfully",
+          });
+        } else {
+          // For login flow
+          toast({
+            title: "Login successful",
+            description: "Welcome back to Skillink 24/7",
+          });
         }
         
-        toast({
-          title: "Success!",
-          description: activeTab === 'register' 
-            ? "Account created successfully" 
-            : "Login successful",
-        });
-        
+        // In both cases, redirect to role selection
         navigate('/role-selection');
       } else {
         toast({
@@ -221,9 +239,9 @@ const Auth: React.FC = () => {
                 <Button 
                   onClick={handleSubmitPhone} 
                   className="w-full" 
-                  disabled={isLoading || phoneNumber.length !== 10}
+                  disabled={isLoading || processingLogin || phoneNumber.length !== 10}
                 >
-                  {isLoading ? (
+                  {(isLoading || processingLogin) ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Processing
@@ -281,9 +299,9 @@ const Auth: React.FC = () => {
                 <Button 
                   onClick={handleSubmitPhone} 
                   className="w-full" 
-                  disabled={isLoading || phoneNumber.length !== 10 || !name.trim()}
+                  disabled={isLoading || processingLogin || phoneNumber.length !== 10 || !name.trim()}
                 >
-                  {isLoading ? (
+                  {(isLoading || processingLogin) ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Processing

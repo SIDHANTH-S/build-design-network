@@ -21,13 +21,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Check if user is authenticated in localStorage or session
-    const storedUser = localStorage.getItem('skillink_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Check if user is authenticated in localStorage
+    const loadUserFromStorage = () => {
+      try {
+        const storedUser = localStorage.getItem('skillink_user');
+        if (storedUser) {
+          // Parse the stored user data, ensuring dates are properly handled
+          const parsedUser = JSON.parse(storedUser, (key, value) => {
+            // Convert date strings back to Date objects
+            if (key === 'createdAt' && typeof value === 'string') {
+              return new Date(value);
+            }
+            return value;
+          });
+          setUser(parsedUser);
+        }
+      } catch (error) {
+        console.error('Error loading user from storage:', error);
+        // Clear potentially corrupted data
+        localStorage.removeItem('skillink_user');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserFromStorage();
   }, []);
+
+  // Save user to localStorage whenever it changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('skillink_user', JSON.stringify(user));
+    }
+  }, [user]);
 
   const login = async (phoneNumber: string): Promise<User | null> => {
     setIsLoading(true);
@@ -40,6 +66,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem('skillink_user', JSON.stringify(user));
       }
       return user;
+    } catch (error) {
+      console.error('Login error:', error);
+      return null;
     } finally {
       setIsLoading(false);
     }
@@ -54,6 +83,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(newUser);
       localStorage.setItem('skillink_user', JSON.stringify(newUser));
       return newUser;
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -71,6 +103,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       return authService.verifyOTP(otp);
+    } catch (error) {
+      console.error('OTP verification error:', error);
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -89,6 +124,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem('skillink_user', JSON.stringify(updatedUser));
       }
       return updatedUser;
+    } catch (error) {
+      console.error('Add role error:', error);
+      return null;
     } finally {
       setIsLoading(false);
     }
@@ -107,6 +145,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem('skillink_user', JSON.stringify(updatedUser));
       }
       return updatedUser;
+    } catch (error) {
+      console.error('Update profile error:', error);
+      return null;
     } finally {
       setIsLoading(false);
     }
